@@ -1,3 +1,17 @@
 spring:
   application:
     name: mail-service
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/mail_service
+    username: postgres
+    password: postgres
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+#      테이블 자동 반영
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
