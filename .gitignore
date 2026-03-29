@@ -17,6 +17,12 @@ bin/
 !**/src/main/**/bin/
 !**/src/test/**/bin/
 
+# =========================
+# Logs
+# =========================
+*.log
+logs/
+
 ### IntelliJ IDEA ###
 .idea
 *.iws
@@ -32,6 +38,10 @@ out/
 /dist/
 /nbdist/
 /.nb-gradle/
+
+# Spring config (민감 정보 분리용)
+application-local.yml
+application-secret.yml
 
 ### VS Code ###
 .vscode/
