@@ -1,2 +1,7 @@
-package com.example.mailservice.mail.queue;public class InMemoryMailQueue {
+package com.example.mailservice.mail.queue;
+
+public class InMemoryMailQueue {
+    /*
+    Blocking 구현
+     */
 }

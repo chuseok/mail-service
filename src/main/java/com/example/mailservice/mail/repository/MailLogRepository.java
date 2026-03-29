@@ -1,2 +1,7 @@
-package com.example.mailservice.mail.repository;public class MailLogRepository {
+package com.example.mailservice.mail.repository;
+
+public class MailLogRepository {
+    /*
+    log insert
+     */
 }
