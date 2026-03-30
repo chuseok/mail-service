@@ -1,2 +1,4 @@
-package com.example.mailservice.mail.controller;public class MailSendServlet {
+package com.example.mailservice.mail.controller;
+
+public class MailSendServlet {
 }
