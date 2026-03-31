@@ -1,7 +1,6 @@
 package com.example.mailservice.mail.exception;
 
 import org.springframework.http.HttpStatus;
-import org.springframework.mail.MailException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -28,9 +27,9 @@ public class GlobalExceptionHandler {
         return result;
     }
 
-    @ExceptionHandler(MailException.class)
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public Map<String, Object> handleMailException(MailException e) {
+    @ExceptionHandler(MailSendException.class)
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    public Map<String, Object> handleMailSendException(MailSendException e) {
         return Map.of(
                 "code", "MAIL_ERROR",
                 "message", e.getMessage()

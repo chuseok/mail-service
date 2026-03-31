@@ -21,6 +21,7 @@ public class MailRequestService {
     큐 넣기
      */
         private final MailRequestRepository mailRequestRepository;
+        private final MailSendService mailSendService;
 
         public MailSendResponse createMailRequest(MailSendRequest dto) {
             String requestId = IdGenerator.generateRequestId();
@@ -34,6 +35,7 @@ public class MailRequestService {
             request.setRetryCount(0);
             request.setMaxRetry(3);
 
+            mailSendService.send(request);
             mailRequestRepository.save(request);
 
             return new MailSendResponse(requestId, "ACCEPTED");
