@@ -4,6 +4,7 @@ import com.example.mailservice.mail.dto.MailSendRequest;
 import com.example.mailservice.mail.dto.MailSendResponse;
 import com.example.mailservice.mail.model.MailRequest;
 import com.example.mailservice.mail.model.MailStatus;
+import com.example.mailservice.mail.queue.MailQueue;
 import com.example.mailservice.mail.repository.MailRequestRepository;
 import com.example.mailservice.util.IdGenerator;
 import lombok.RequiredArgsConstructor;
@@ -20,24 +21,26 @@ public class MailRequestService {
     DB 저장
     큐 넣기
      */
-        private final MailRequestRepository mailRequestRepository;
-        private final MailSendService mailSendService;
+    private final MailRequestRepository mailRequestRepository;
+    private final MailSendService mailSendService;
+    private final MailQueue mailQueue;
 
-        public MailSendResponse createMailRequest(MailSendRequest dto) {
-            String requestId = IdGenerator.generateRequestId();
+    public MailSendResponse createMailRequest(MailSendRequest dto) {
+        String requestId = IdGenerator.generateRequestId();
 
-            MailRequest request = new MailRequest();
-            request.setRequestId(requestId);
-            request.setToEmail(dto.to());
-            request.setSubject(dto.subject());
-            request.setBody(dto.body());
-            request.setStatus(MailStatus.PENDING);
-            request.setRetryCount(0);
-            request.setMaxRetry(3);
+        MailRequest request = new MailRequest();
+        request.setRequestId(requestId);
+        request.setToEmail(dto.to());
+        request.setSubject(dto.subject());
+        request.setBody(dto.body());
+        request.setStatus(MailStatus.PENDING);
+        request.setRetryCount(0);
+        request.setMaxRetry(3);
 
-            mailSendService.send(request);
-            mailRequestRepository.save(request);
+        mailSendService.send(request);
+        mailRequestRepository.save(request);
+        mailQueue.enqueue(requestId);
 
-            return new MailSendResponse(requestId, "ACCEPTED");
-        }
+        return new MailSendResponse(requestId, "ACCEPTED");
     }
+}
