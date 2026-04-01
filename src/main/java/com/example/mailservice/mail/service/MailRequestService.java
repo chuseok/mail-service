@@ -8,12 +8,14 @@ import com.example.mailservice.mail.queue.MailQueue;
 import com.example.mailservice.mail.repository.MailRequestRepository;
 import com.example.mailservice.util.IdGenerator;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class MailRequestService {
     /*
     requestId 생성
@@ -22,7 +24,6 @@ public class MailRequestService {
     큐 넣기
      */
     private final MailRequestRepository mailRequestRepository;
-    private final MailSendService mailSendService;
     private final MailQueue mailQueue;
 
     public MailSendResponse createMailRequest(MailSendRequest dto) {
@@ -37,9 +38,12 @@ public class MailRequestService {
         request.setRetryCount(0);
         request.setMaxRetry(3);
 
-        mailSendService.send(request);
+        log.info("mail request created. requestId={}, to={}", requestId, dto.to());
         mailRequestRepository.save(request);
+        log.info("mail request saved. requestId={}, status={}",
+                requestId, request.getStatus());
         mailQueue.enqueue(requestId);
+        log.info("mail enqueued. requestId={}", requestId);
 
         return new MailSendResponse(requestId, "ACCEPTED");
     }
