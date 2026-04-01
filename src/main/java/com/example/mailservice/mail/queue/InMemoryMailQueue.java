@@ -1,8 +1,11 @@
 package com.example.mailservice.mail.queue;
 
+import org.springframework.stereotype.Component;
+
 import java.time.LocalDateTime;
 import java.util.concurrent.DelayQueue;
 
+@Component
 public class InMemoryMailQueue implements MailQueue {
     /*
     Blocking 구현
