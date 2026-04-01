@@ -40,7 +40,7 @@ out/
 /.nb-gradle/
 
 # Spring config (민감 정보 분리용)
-application-local.yml
+application.yml
 application-secret.yml
 
 ### VS Code ###
