@@ -24,13 +24,17 @@ public class AppInitializer {
     private final MailWorker mailWorker;
 
     private final MailRecoveryService mailRecoveryService;
+    private final ExecutorService executor = Executors.newSingleThreadExecutor(r -> {
+        Thread thread = new Thread(r);
+        thread.setName("mail-worker-1");
+        thread.setDaemon(true);
+        return thread;
+    });
 
     @EventListener(ApplicationReadyEvent.class)
     public void startWorker() {
         log.info("mail system initialization started.");
         mailRecoveryService.recoverPendingJobs();
-
-        ExecutorService executor = Executors.newSingleThreadExecutor();
         executor.submit(mailWorker);
         log.info("mail worker started.");
     }
