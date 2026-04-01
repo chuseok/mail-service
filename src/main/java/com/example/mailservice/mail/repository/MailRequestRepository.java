@@ -8,6 +8,8 @@ import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Repository;
 
 import java.sql.Timestamp;
+import java.time.LocalDateTime;
+import java.util.List;
 
 @Repository
 @RequiredArgsConstructor
@@ -78,5 +80,66 @@ public class MailRequestRepository {
                 """;
 
         jdbcTemplate.update(sql, status.name(), requestId);
+    }
+
+    public void markAsSent(String requestId) {
+        String sql = """
+        UPDATE mail_request
+        SET status = ?, updated_at = NOW(), last_error_message = NULL, next_retry_at = NULL
+        WHERE request_id = ?
+        """;
+
+        jdbcTemplate.update(sql, MailStatus.SENT.name(), requestId);
+    }
+
+    public void markForRetry(String requestId, int retryCount, LocalDateTime nextRetryAt, String lastErrorMessage) {
+        String sql = """
+        UPDATE mail_request
+        SET status = ?, retry_count = ?, next_retry_at = ?, last_error_message = ?, updated_at = NOW()
+        WHERE request_id = ?
+        """;
+
+        jdbcTemplate.update(
+                sql,
+                MailStatus.RETRY_WAIT.name(),
+                retryCount,
+                nextRetryAt,
+                lastErrorMessage,
+                requestId
+        );
+    }
+
+    public void markAsFailed(String requestId, String lastErrorMessage) {
+        String sql = """
+        UPDATE mail_request
+        SET status = ?, last_error_message = ?, updated_at = NOW()
+        WHERE request_id = ?
+        """;
+
+        jdbcTemplate.update(
+                sql,
+                MailStatus.FAILED.name(),
+                lastErrorMessage,
+                requestId
+        );
+    }
+
+    public List<MailRequest> findRecoverableRequests() {
+        String sql = """
+        SELECT request_id, to_email, subject, body, status, retry_count, max_retry, next_retry_at, last_error_message
+        FROM mail_request
+        WHERE status = ?
+           OR status = ?
+           OR status = ?
+        ORDER BY updated_at ASC
+        """;
+
+        return jdbcTemplate.query(
+                sql,
+                mailRequestRowMapper,
+                MailStatus.PENDING.name(),
+                MailStatus.PROCESSING.name(),
+                MailStatus.RETRY_WAIT.name()
+        );
     }
 }
