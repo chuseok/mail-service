@@ -5,12 +5,14 @@ import com.example.mailservice.mail.dto.MailSendResponse;
 import com.example.mailservice.mail.model.MailLogEventType;
 import com.example.mailservice.mail.model.MailRequest;
 import com.example.mailservice.mail.model.MailStatus;
+import com.example.mailservice.mail.policy.MailPolicy;
 import com.example.mailservice.mail.queue.MailQueue;
 import com.example.mailservice.mail.repository.MailRequestRepository;
 import com.example.mailservice.util.IdGenerator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
 
@@ -27,12 +29,17 @@ public class MailRequestService {
     private final MailRequestRepository mailRequestRepository;
     private final MailQueue mailQueue;
     private final MailLogService mailLogService;
+    private final DefaultMailPolicyService mailPolicyService;
 
+    @Transactional
     public MailSendResponse createMailRequest(MailSendRequest dto) {
         String requestId = IdGenerator.generateRequestId();
 
+        MailPolicy policy = mailPolicyService.getPolicy(dto.customerCode());
+
         MailRequest request = new MailRequest();
         request.setRequestId(requestId);
+        request.setCustomerCode(policy.customerCode());
         request.setToEmail(dto.to());
         request.setSubject(dto.subject());
         request.setBody(dto.body());
@@ -40,7 +47,8 @@ public class MailRequestService {
         request.setRetryCount(0);
         request.setMaxRetry(3);
 
-        log.info("mail request created. requestId={}, to={}", requestId, dto.to());
+        log.info("mail request created. requestId={}, customerCode={}, to={}",
+                requestId, policy.customerCode(), dto.to());
         mailLogService.log(
                 requestId,
                 MailLogEventType.REQUEST_CREATED,

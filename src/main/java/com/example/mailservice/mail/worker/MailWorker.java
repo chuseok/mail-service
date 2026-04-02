@@ -3,6 +3,8 @@ package com.example.mailservice.mail.worker;
 import com.example.mailservice.mail.model.MailLogEventType;
 import com.example.mailservice.mail.model.MailRequest;
 import com.example.mailservice.mail.model.MailStatus;
+import com.example.mailservice.mail.policy.MailPolicy;
+import com.example.mailservice.mail.policy.MailPolicyService;
 import com.example.mailservice.mail.queue.MailQueue;
 import com.example.mailservice.mail.repository.MailRequestRepository;
 import com.example.mailservice.mail.service.MailLogService;
@@ -22,6 +24,8 @@ public class MailWorker implements Runnable {
     private final MailRequestRepository mailRequestRepository;
     private final MailSendService mailSenderService;
     private final MailLogService mailLogService;
+    private final MailPolicyService mailPolicyService;
+
 
     @Override
     public void run() {
@@ -98,18 +102,20 @@ public class MailWorker implements Runnable {
     }
 
     private void handleFailure(MailRequest request, Exception e) {
+        MailPolicy policy = mailPolicyService.getPolicy(request.getCustomerCode());
+
         int nextRetryCount = request.getRetryCount() + 1;
         String requestId = request.getRequestId();
 
-        log.warn("mail failure handled. requestId={}, nextRetryCount={}, maxRetry={}",
-                requestId, nextRetryCount, request.getMaxRetry());
-        if (nextRetryCount >= request.getMaxRetry()) {
+        log.warn("mail failure handled. requestId={}, customerCode={}, nextRetryCount={}, maxRetry={}",
+                requestId, policy.customerCode(), nextRetryCount, policy.maxRetry());
+        if (nextRetryCount >= policy.maxRetry()) {
             mailRequestRepository.markAsFailed(
                     requestId,
                     e.getMessage()
             );
-            log.error("mail failed permanently. requestId={}, retryCount={}, error={}",
-                    requestId, nextRetryCount, e.getMessage(), e);
+            log.error("mail failed permanently. requestId={}, customerCode={}, retryCount={}, error={}",
+                    requestId, policy.customerCode(), nextRetryCount, e.getMessage(), e);
             mailLogService.log(
                     requestId,
                     MailLogEventType.FINAL_FAIL,
@@ -118,7 +124,8 @@ public class MailWorker implements Runnable {
             return;
         }
 
-        LocalDateTime nextRetryAt = LocalDateTime.now().plusMinutes(nextRetryCount);
+        LocalDateTime nextRetryAt = LocalDateTime.now()
+                .plusSeconds((long) policy.retryIntervalSeconds() * nextRetryCount);
 
         mailRequestRepository.markForRetry(
                 requestId,
@@ -128,8 +135,8 @@ public class MailWorker implements Runnable {
         );
 
         mailQueue.enqueue(requestId, nextRetryAt);
-        log.error("mail failed permanently. requestId={}, retryCount={}, error={}",
-                requestId, nextRetryCount, e.getMessage(), e);
+        log.warn("mail send failed. retry scheduled. requestId={}, customerCode={}, retryCount={}, nextRetryAt={}",
+                requestId, policy.customerCode(), nextRetryCount, nextRetryAt, e);
         mailLogService.log(
                 requestId,
                 MailLogEventType.RETRY_SCHEDULED,

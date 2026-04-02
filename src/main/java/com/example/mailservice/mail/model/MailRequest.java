@@ -13,6 +13,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class MailRequest {
     private String requestId;
+    private String customerCode;
     private String toEmail;
     private String subject;
     private String body;

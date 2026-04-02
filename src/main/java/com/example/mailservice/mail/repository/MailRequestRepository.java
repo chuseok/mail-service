@@ -20,6 +20,7 @@ public class MailRequestRepository {
     private final RowMapper<MailRequest> mailRequestRowMapper = (rs, rowNum) -> {
         MailRequest request = new MailRequest();
         request.setRequestId(rs.getString("request_id"));
+        request.setCustomerCode(rs.getString("customer_code"));
         request.setToEmail(rs.getString("to_email"));
         request.setSubject(rs.getString("subject"));
         request.setBody(rs.getString("body"));
@@ -38,29 +39,39 @@ public class MailRequestRepository {
 
     public void save(MailRequest request) {
         String sql = """
-                INSERT INTO mail_request
-                (request_id, to_email, subject, body, status, retry_count, max_retry, last_error_message, next_retry_at, created_at, updated_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
-                """;
+        INSERT INTO mail_request (
+            request_id,
+            customer_code,
+            to_email,
+            subject,
+            body,
+            status,
+            retry_count,
+            max_retry,
+            next_retry_at,
+            last_error_message
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """;
 
         jdbcTemplate.update(
                 sql,
                 request.getRequestId(),
+                request.getCustomerCode(),
                 request.getToEmail(),
                 request.getSubject(),
                 request.getBody(),
                 request.getStatus().name(),
                 request.getRetryCount(),
                 request.getMaxRetry(),
-                request.getLastErrorMessage(),
-                request.getNextRetryAt()
+                request.getNextRetryAt(),
+                request.getLastErrorMessage()
         );
     }
 
     public MailRequest findByRequestId(String requestId) {
         String sql = """
-                SELECT request_id, to_email, subject, body, status, retry_count, max_retry,
-                       last_error_message, next_retry_at
+        SELECT request_id, customer_code, to_email, subject, body, status,
+                       retry_count, max_retry, next_retry_at, last_error_message
                 FROM mail_request
                 WHERE request_id = ?
                 """;
