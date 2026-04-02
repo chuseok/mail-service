@@ -2,6 +2,7 @@ package com.example.mailservice.mail.service;
 
 import com.example.mailservice.mail.dto.MailSendRequest;
 import com.example.mailservice.mail.dto.MailSendResponse;
+import com.example.mailservice.mail.model.MailLogEventType;
 import com.example.mailservice.mail.model.MailRequest;
 import com.example.mailservice.mail.model.MailStatus;
 import com.example.mailservice.mail.queue.MailQueue;
@@ -25,6 +26,7 @@ public class MailRequestService {
      */
     private final MailRequestRepository mailRequestRepository;
     private final MailQueue mailQueue;
+    private final MailLogService mailLogService;
 
     public MailSendResponse createMailRequest(MailSendRequest dto) {
         String requestId = IdGenerator.generateRequestId();
@@ -39,11 +41,27 @@ public class MailRequestService {
         request.setMaxRetry(3);
 
         log.info("mail request created. requestId={}, to={}", requestId, dto.to());
+        mailLogService.log(
+                requestId,
+                MailLogEventType.REQUEST_CREATED,
+                "mail request created"
+        );
+
         mailRequestRepository.save(request);
         log.info("mail request saved. requestId={}, status={}",
                 requestId, request.getStatus());
+        mailLogService.log(
+                requestId,
+                MailLogEventType.REQUEST_SAVED,
+                "mail request saved with status=PENDING"
+        );
         mailQueue.enqueue(requestId);
         log.info("mail enqueued. requestId={}", requestId);
+        mailLogService.log(
+                requestId,
+                MailLogEventType.ENQUEUED,
+                "request enqueued for async processing"
+        );
 
         return new MailSendResponse(requestId, "ACCEPTED");
     }

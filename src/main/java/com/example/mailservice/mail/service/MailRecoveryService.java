@@ -1,5 +1,6 @@
 package com.example.mailservice.mail.service;
 
+import com.example.mailservice.mail.model.MailLogEventType;
 import com.example.mailservice.mail.model.MailRequest;
 import com.example.mailservice.mail.model.MailStatus;
 import com.example.mailservice.mail.queue.MailQueue;
@@ -17,6 +18,7 @@ public class MailRecoveryService {
 
     private final MailRequestRepository mailRequestRepository;
     private final MailQueue mailQueue;
+    private final MailLogService mailLogService;
 
     public void recoverPendingJobs() {
         List<MailRequest> targets = mailRequestRepository.findRecoverableRequests();
@@ -28,10 +30,20 @@ public class MailRecoveryService {
                 mailQueue.enqueue(request.getRequestId(), request.getNextRetryAt());
                 log.info("recovered retry request. requestId={}, nextRetryAt={}",
                         request.getRequestId(), request.getNextRetryAt());
+                mailLogService.log(
+                        request.getRequestId(),
+                        MailLogEventType.RECOVERED_ON_STARTUP,
+                        "recovered on startup with delayed enqueue. nextRetryAt=" + request.getNextRetryAt()
+                );
             } else {
                 mailQueue.enqueue(request.getRequestId());
                 log.info("recovered immediate request. requestId={}, status={}",
                         request.getRequestId(), request.getStatus());
+                mailLogService.log(
+                        request.getRequestId(),
+                        MailLogEventType.RECOVERED_ON_STARTUP,
+                        "recovered on startup with immediate enqueue"
+                );
             }
         }
     }
